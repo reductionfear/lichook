@@ -34,7 +34,7 @@
     autoMove: false,
     skillLevel: 10,
     depth: 4,
-    timeLimitMs: 50,
+    timeLimitMs: 1000,
     humanLikeTiming: false,
     minDelay: 500,
     maxDelay: 2000,
@@ -85,7 +85,9 @@
   function completeFen(partialFen) {
     let fenParts = partialFen.split(' ');
     if (fenParts.length === 6) return partialFen;
-    if (fenParts.length === 2) fenParts.push('KQkq');
+    // Use '-' for unknown castling rights (safer than assuming full rights)
+    // Lichess will provide correct rights when available in the message
+    if (fenParts.length === 2) fenParts.push('-');
     if (fenParts.length === 3) fenParts.push('-');
     if (fenParts.length === 4) fenParts.push('0');
     if (fenParts.length === 5) fenParts.push('1');
@@ -122,7 +124,11 @@
               case 'move':
                 if (message.d && typeof message.d.fen === "string") {
                   currentFen = message.d.fen;
-                  let isWhitesTurn = message.d.ply % 2 === 0;
+                  // In Lichess, ply starts at 0 for initial position (white's turn)
+                  // ply 0 = white's turn, ply 1 = black's turn (after white moved), etc.
+                  // So even ply = white's turn, odd ply = black's turn
+                  const ply = message.d.ply !== undefined ? message.d.ply : 0;
+                  let isWhitesTurn = ply % 2 === 0;
                   currentFen += isWhitesTurn ? " w" : " b";
                   currentFen = completeFen(currentFen);
                   
