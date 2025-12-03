@@ -106,8 +106,21 @@
         const wrappedWebSocket = new target(...args);
         
         // Only intercept Lichess game WebSockets
+        // The script only runs on lichess.org (enforced by @include), but we verify the URL
         const url = args[0] || '';
-        if (url.includes('lichess.org') || url.includes('/socket')) {
+        let isLichessSocket = false;
+        try {
+          const parsedUrl = new URL(url, window.location.origin);
+          // Check if the host is exactly lichess.org or a subdomain
+          isLichessSocket = parsedUrl.hostname === 'lichess.org' || 
+                           parsedUrl.hostname.endsWith('.lichess.org') ||
+                           parsedUrl.pathname.includes('/socket');
+        } catch (e) {
+          // If URL parsing fails, check if it's a relative socket path
+          isLichessSocket = url.startsWith('/socket') || url.includes('/socket/');
+        }
+        
+        if (isLichessSocket) {
           webSocketWrapper = wrappedWebSocket;
           debug(`WebSocket connected: ${url}`);
 
